@@ -1,19 +1,19 @@
+% simulate noisy test, noiseless probe
 clear all;
-
 load('Coppola_outdoor_indoor_fit_flip_90.mat')
 
-kappa_i = 16; % sensory noise
+kappa_i = 15.79; % sensory noise
 kappa_e = inf; % stimulus noise
-kappa_b = 8; % category noise
+kappa_c = 8.29; % category noise
 p_c = 0.6; % cardinal probability
-kappa_m = 35; % motor noise, <=700
-w_c = 8; % categorical loss weight
+kappa_m = 34.63; % motor noise, <=700
+w_c = 10.75; % categorical loss weight
 
 res = 0.5; 
 adaptor = 0;
 stimulus = 0:180; % must be on 0:res:180 grid
 
-[ estimation, p_sti_est ] = ECCategpredict_02_noisysoft( fit_spline_90, nrml_90, kappa_i, kappa_e, kappa_b, p_c, kappa_m, w_c, res, stimulus );
+[ estimation, p_sti_est ] = ECCategpredict_02_noisysoft( fit_spline_90, nrml_90, kappa_i, kappa_e, kappa_c, p_c, kappa_m, w_c, res, stimulus );
 
 %% Gaussian kernel smoothing
 % estimation -> error

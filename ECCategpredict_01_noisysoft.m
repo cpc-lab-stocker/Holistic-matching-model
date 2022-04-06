@@ -1,4 +1,4 @@
-function [ adjust, p_theta_adj_return ] = ECCategpredict_02_noisysoft( Fit_prior, nrml_prior, kappa_i, kappa_e, kappa_c, p_c, kappa_m, w_c, res, stimulus )
+function [ Bias, Var ] = ECCategpredict_01_noisysoft( Fit_prior, nrml_prior, kappa_i, kappa_e, kappa_c, p_c, kappa_m, w_c, res, stimulus )
 %% noisy test, noiseless probe
 
 if kappa_m > 700
@@ -172,16 +172,17 @@ else
 end
 p_adj_theta = sum(p_adj_theta_bound.*p_bound_dx1,3);
 adjust = x1;
+p_adj_theta_dadj = p_adj_theta .* dx1';
     
-%% prob density of estimation1 given stimulus(theta)
-p_adj_theta_return = NaN(size(p_adj_theta,1), length(stimulus));
+%% bias & var
+Est = NaN(size(stimulus));
+Var = NaN(size(stimulus));
 for i = 1:length(stimulus)
     sti = stimulus(i);
     sti_ind = round(circ180(sti+90)/res)+1; % x1(sti_ind) = sti
-    p_adj_theta_return(:,i) = p_adj_theta(:,sti_ind);
+    [ Est(i), Var(i) ] = circ_mean_var( adjust, p_adj_theta_dadj(:,sti_ind)' );
 end
-adjust = circ90(adjust); 
-p_theta_adj_return = p_adj_theta_return';
+Bias = circ90(Est-stimulus);
 
 
 
