@@ -14,7 +14,7 @@ dx1 = ones(1, length(x1))*res;
 prior2 = 1/360;
 f1 = prior0/prior2;
 
-%% encoding
+%% efficient encoding
 p1_m1_theta = zeros(length(x1), length(x1)); % P( external sample m1 | stimulus theta ); m1 * theta
 if kappa_e > 700
     p1_m1_theta = eye(length(x1));
@@ -28,17 +28,18 @@ if kappa_i > 700
     p1_m2_m1 = eye(length(x1));
 else
     for j = 1:length(x1)
+        % uniform von mises noise in sensory space, then transformed to physical space
         p1_m2_m1(:,j) = circ_vmpdf(x2/180*pi,x2(j)/180*pi,kappa_i)'/180*pi.*f1';
     end
 end
 p1_m2_theta = p1_m2_m1 * (p1_m1_theta.*dx1'); % P( internal sample m2 | stimulus theta ); m2 * theta
-p1_m2_theta = p1_m2_theta./(dx1*p1_m2_theta);
+p1_m2_theta = p1_m2_theta./(dx1*p1_m2_theta); % normalize
 
 %% category structure
 n_cat = length(theta_b);
 p_bound = circ_vmpdf(x1*pi/180, 0, kappa_b)*pi/180; 
 p_bound = p_bound/sum(p_bound)/res;
-prob_cat_theta = zeros(n_cat, length(x1), length(x1)); % catgory * x1 * boundary jitter position 
+prob_cat_theta = zeros(n_cat, length(x1), length(x1)); % P( category | theta ); catgory * theta(x1) * boundary jitter position 
 
 prob0_cat_theta = zeros(n_cat, length(x1));
 for j = 1:n_cat
@@ -66,7 +67,7 @@ mean_cos_x = cosd(x1) * (post2.*dx1)'; % 1 * m2
 mean_sin_x = sind(x1) * (post2.*dx1)';
 L_adj = 2 - 2 * ( mean_cos_x'.*cosd(x1) + mean_sin_x'.*sind(x1) ); % m2 * estimate
 
-for i = 1:length(x1) % boundary position
+for i = 1:length(x1) % each boundary position
     post2_cat = prob_cat_theta(:,:,i) * (post2.*dx1)';  % n_cat * m2
     L_cat_exp = post2_cat'*(1-prob_cat_theta(:,:,i)); % m2 * estimate
     L_tot = L_cat_exp * w_c + L_adj * (1-w_c);
@@ -78,7 +79,7 @@ end
 %% response probability
 p_adj_x1end = circ_vmpdf(x1'/180*pi,x1(end)/180*pi,kappa_m)/180*pi;
 p1_adj_theta_bound = NaN(length(x1), length(x1), length(x1));
-for j = 1:length(x1) % bound
+for j = 1:length(x1) % each boundary position
     p_adj_est = zeros(length(x1), length(x1));
     for i = 1:length(x1) % m2
         p_adj_est(:,i) = circshift(p_adj_x1end, estimation1_I(j,i));

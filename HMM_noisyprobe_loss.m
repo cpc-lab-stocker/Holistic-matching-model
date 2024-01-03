@@ -12,7 +12,7 @@ prior1 = prior_fun2num(x1, Fit_prior, nrml_prior);
 x2 = space_nonuni2uni(x1, Fit_prior, nrml_prior, 180); % sensory space, [0,180)
 prior2 = 1/180;
 
-%% encoding
+%% efficient encoding
 p1_m1_theta = zeros(length(x1), length(x1)); % P( external sample m1 | stimulus theta ); m1 * theta
 if kappa_e > 700
     p1_m1_theta = eye(length(x1));
@@ -26,15 +26,18 @@ if kappa_i > 700
     p1_m2_m1 = eye(length(x1));
 else
     for j = 1:length(x1)
+        % uniform von mises noise in sensory space, then transformed to physical space
         p1_m2_m1(:,j) = circ_vmpdf(2*x2/180*pi,2*x2(j)/180*pi,kappa_i)'/90*pi.*prior1'/prior2;
     end
 end
 p1_m2_theta = p1_m2_m1 * (p1_m1_theta .* dx1'); % P( internal sample m2 | stimulus theta ); m2 * theta
-p1_m2_theta = p1_m2_theta./(dx1*p1_m2_theta);
+p1_m2_theta = p1_m2_theta./(dx1*p1_m2_theta); % normalize
 
 %% category structure
+% P( category | theta )
 [cat0_CW, cat0_CCW, cat0_card0, cat0_card90] = prob_cat_theta(x1, kappa_b, p_c);
 
+% noisy signal of cardinal position = cardinal
 [M_m, I_m] = min(abs(x1-measurement));
 [M_c, I_c] = min(abs(x1-cardinal));
 
@@ -42,18 +45,6 @@ cat_CW = circshift(cat0_CW, I_c-1);
 cat_CCW = circshift(cat0_CCW, I_c-1);
 cat_card0 = circshift(cat0_card0, I_c-1);
 cat_card90 = circshift(cat0_card90, I_c-1);
-
-% mean cos(adj-est)
-if kappa_m>700
-    p_adj = [zeros(length(x1)-1, 1); 1/res];
-else
-    p_adj = circ_vmpdf(2*x1/180*pi,2*x1(end)/180*pi,kappa_m)'/90*pi;
-end
-
-p_adj_circshift = NaN(length(x1), length(x1)); % adj * csr
-for i = 1:length(x1)
-    p_adj_circshift(:, i) = circshift(p_adj, i);
-end
 
 post_csr_mest = p1_m2_theta.*prior1;
 post_csr_mest = (post_csr_mest./(post_csr_mest*dx1'))'; % csr * measurement of est
